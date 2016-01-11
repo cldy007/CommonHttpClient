@@ -32,7 +32,14 @@ public abstract class Request<T> implements Comparable<Request<T>> {
         this.mUrl = mUrl;
         this.mErrorListener = mErrorListener;
         setRetryPolicy(new DefaultRetryPolicy());
+        mDefaultTrafficStatsTag = findDefaultTrafficStatsTag(mUrl);
+    }
 
+    public Request(int mMethod , String mUrl , Map<String ,String > params ,Response.ErrorListener mErrorListener ){
+        this.mMethod = mMethod;
+        this.mUrl = getFullUrl(mUrl , params);
+        this.mErrorListener = mErrorListener;
+        setRetryPolicy(new DefaultRetryPolicy());
         mDefaultTrafficStatsTag = findDefaultTrafficStatsTag(mUrl);
     }
 
@@ -225,6 +232,27 @@ public abstract class Request<T> implements Comparable<Request<T>> {
 
     public Priority getPriority(){
         return Priority.NORMAL;
+    }
+
+    public String getFullUrl(String url , Map<String ,String > params ){
+        StringBuilder builder = new StringBuilder();
+        builder.append(url);
+        if(!url.contains("?")){
+            builder.append("?");
+        }
+        int i = 0;
+        if(params != null){
+            for(String key : params.keySet()){
+                String encodeValue = Uri.encode(params.get(key) , getParamsEncoding());
+                if(i != 0){
+                    builder.append("&");
+                }
+                builder.append(key).append("=").append(encodeValue);
+                i++;
+            }
+        }
+        String fullUrl = builder.toString();
+        return fullUrl;
     }
 
     @Override

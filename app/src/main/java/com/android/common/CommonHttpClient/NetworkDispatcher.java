@@ -37,7 +37,8 @@ public class NetworkDispatcher extends Thread {
             long startTimeMs = SystemClock.elapsedRealtime();
             Request<?> request;
             try {
-                request = mQueue.take();
+                request = mQueue.take();// block
+                DebugLog.log(DebugLog.REQUEST_TAG , "Full request url is " + request.getUrl());
             } catch (InterruptedException e) {
                 if(mQuit){
                     return;
