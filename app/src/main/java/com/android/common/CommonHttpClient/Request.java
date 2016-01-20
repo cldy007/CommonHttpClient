@@ -13,18 +13,42 @@ import java.util.Map;
  */
 public abstract class Request<T> implements Comparable<Request<T>> {
 
+    private static final String DEFAULT_PARAMS_ENCODING = "UTF-8";
+
+    public interface Method {
+        int DEPRECATED_GET_OR_POST = -1;
+        int GET = 0;
+        int POST = 1;
+        int PUT = 2;
+        int DELETE = 3;
+        int HEAD = 4;
+        int OPTIONS = 5;
+        int TRACE = 6;
+        int PATCH = 7;
+    }
+
     private final int mMethod;
+
     private final String mUrl;
+
     private final int mDefaultTrafficStatsTag;
+
     private final Response.ErrorListener mErrorListener;
+
     private  Integer mSequence;
+
     private RequestQueue mRequestQueue;
+
     private boolean mShouldCache = true;
+
     private boolean mCanceled = false;
+
     private boolean mResponseDelivered = false;
+
     private RetryPolicy mRetryPolicy;
 
     private Cache.Entry mCacheEntry = null;
+
     private Object mTag;
 
     public Request(int mMethod, String mUrl, Response.ErrorListener mErrorListener) {
@@ -43,18 +67,38 @@ public abstract class Request<T> implements Comparable<Request<T>> {
         mDefaultTrafficStatsTag = findDefaultTrafficStatsTag(mUrl);
     }
 
-    private static final String DEFAULT_PARAMS_ENCODING = "UTF-8";
+    public int getMethod(){
+        return mMethod;
+    }
 
-    public interface Method {
-        int DEPRECATED_GET_OR_POST = -1;
-        int GET = 0;
-        int POST = 1;
-        int PUT = 2;
-        int DELETE = 3;
-        int HEAD = 4;
-        int OPTIONS = 5;
-        int TRACE = 6;
-        int PATCH = 7;
+    public Request<?> setTag(Object tag){
+        this.mTag = tag;
+        return this;
+    }
+
+    public Object getTag(){
+        return mTag;
+    }
+
+    public Response.ErrorListener getErrorListener() {
+        return mErrorListener;
+    }
+
+    public int getTrafficStatsTag() {
+        return mDefaultTrafficStatsTag;
+    }
+
+    private static int findDefaultTrafficStatsTag(String url){
+        if(!TextUtils.isEmpty(url)){
+            Uri uri = Uri.parse(url);
+            if(uri != null){
+                String host = uri.getHost();
+                if(host != null){
+                    return host.hashCode();
+                }
+            }
+        }
+        return 0;
     }
 
     public Request<?> setRetryPolicy(RetryPolicy retryPolicy) {
@@ -86,25 +130,19 @@ public abstract class Request<T> implements Comparable<Request<T>> {
         return mSequence;
     }
 
-    public int getMethod(){
-        return mMethod;
+    public String getUrl(){
+        return mUrl;
     }
 
-    public Request<?> setTag(Object tag){
-        this.mTag = tag;
-        return this;
+    public String getCacheKey(){
+        return getUrl();
     }
 
-    public Object getTag(){
-        return mTag;
+    public void setCacheEntry(Cache.Entry entry){
+        this.mCacheEntry = entry;
     }
-
-    public Response.ErrorListener getErrorListener() {
-        return mErrorListener;
-    }
-
-    public int getTrafficStatsTag() {
-        return mDefaultTrafficStatsTag;
+    public Cache.Entry getCacheEntry(){
+        return this.mCacheEntry;
     }
 
     public boolean isCanceled(){
@@ -131,20 +169,6 @@ public abstract class Request<T> implements Comparable<Request<T>> {
         return this;
     }
 
-    public String getUrl(){
-        return mUrl;
-    }
-
-    public String getCacheKey(){
-        return getUrl();
-    }
-
-    public void setCacheEntry(Cache.Entry entry){
-        this.mCacheEntry = entry;
-    }
-    public Cache.Entry getCacheEntry(){
-        return this.mCacheEntry;
-    }
 
     public Map<String ,String > getHeaders() {
         return Collections.emptyMap();
@@ -210,19 +234,6 @@ public abstract class Request<T> implements Comparable<Request<T>> {
         }
     }
 
-    private static int findDefaultTrafficStatsTag(String url){
-        if(!TextUtils.isEmpty(url)){
-            Uri uri = Uri.parse(url);
-            if(uri != null){
-                String host = uri.getHost();
-                if(host != null){
-                    return host.hashCode();
-                }
-            }
-        }
-        return 0;
-    }
-
     public enum Priority{
         LOW,
         NORMAL,
@@ -237,11 +248,11 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     public String getFullUrl(String url , Map<String ,String > params ){
         StringBuilder builder = new StringBuilder();
         builder.append(url);
-        if(!url.contains("?")){
-            builder.append("?");
-        }
         int i = 0;
         if(params != null){
+            if(!url.contains("?")){
+                builder.append("?");
+            }
             for(String key : params.keySet()){
                 String encodeValue = Uri.encode(params.get(key) , getParamsEncoding());
                 if(i != 0){

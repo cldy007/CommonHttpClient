@@ -49,8 +49,8 @@ public class HurlStack implements HttpStack {
 
         URL parseUrl = new URL(url);
         HttpURLConnection urlConnection = openConnection(parseUrl,request);
-        for(Map.Entry<String ,String > entry : map.entrySet()){
-            urlConnection.addRequestProperty(entry.getKey(),entry.getValue());
+        for(String headerName : map.keySet()){
+            urlConnection.addRequestProperty(headerName,map.get(headerName));
         }
         setConnectionParametersForRequest(urlConnection , request);
         ProtocolVersion version = new ProtocolVersion("HTTP",1,1);
@@ -65,8 +65,10 @@ public class HurlStack implements HttpStack {
             response.setEntity(entityFromConnection(urlConnection));
         }
         for(Map.Entry<String ,List<String>> header : urlConnection.getHeaderFields().entrySet()){
-            Header h = new BasicHeader(header.getKey() , header.getValue().get(0));
-            response.addHeader(h);
+            if (header.getKey() != null) {
+                Header h = new BasicHeader(header.getKey(), header.getValue().get(0));
+                response.addHeader(h);
+            }
         }
         return response;
     }
@@ -93,7 +95,7 @@ public class HurlStack implements HttpStack {
         connection.setConnectTimeout(timeoutMs);
         connection.setReadTimeout(timeoutMs);
         connection.setUseCaches(false);
-        connection.setDoOutput(true);
+        connection.setDoInput(true);
         if("https".equals(url.getProtocol()) && mSslSocketFactory != null){
             ((HttpsURLConnection)connection).setSSLSocketFactory(mSslSocketFactory);
         }
